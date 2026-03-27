@@ -1,17 +1,18 @@
 {
-  "name": "@koppajs/language-server",
+  "name": "@koppajs/koppajs-language-server",
   "version": "0.1.0",
-  "description": "Language Server Protocol implementation for KoppaJS.",
+  "description": "Language Server Protocol adapter for KoppaJS language tooling.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/koppajs/language-server"
+    "url": "git+https://github.com/koppajs/koppajs-language-server.git"
   },
   "main": "./dist/server.js",
   "types": "./dist/server.d.ts",
   "files": [
     "dist",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "exports": {
@@ -22,17 +23,34 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "prepack": "npm run validate",
+    "release:check": "npm pack --dry-run",
+    "test": "npm run build && node --test test/*.test.cjs",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "validate": "npm run typecheck && npm run build"
+    "validate": "npm run check"
   },
   "dependencies": {
-    "@koppajs/language-core": "file:../language-core",
+    "@koppajs/koppajs-language-core": "^0.1.2",
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.12"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
     "@types/node": "^22.19.15",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.7.3",
     "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20",
+    "npm": ">=10"
   },
   "publishConfig": {
     "access": "public"

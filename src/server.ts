@@ -1,75 +1,85 @@
-import { fileURLToPath, pathToFileURL } from 'url';
+import { fileURLToPath } from 'url';
 import {
-  CodeAction,
-  CodeActionKind,
-  CompletionItem,
-  CompletionItemKind,
-  Connection,
   createConnection,
-  DidChangeWatchedFilesParams,
-  Diagnostic,
-  DiagnosticSeverity,
-  DocumentSymbol,
-  Hover,
-  InitializeParams,
-  InitializeResult,
-  InsertTextFormat,
-  Location,
-  MarkupKind,
+  DidChangeWatchedFilesNotification,
   ProposedFeatures,
-  Range,
+  TextDocuments,
+} from 'vscode-languageserver/node';
+import type {
+  Connection,
+  DidChangeWatchedFilesParams,
   ReferenceParams,
   RenameParams,
-  SymbolInformation,
-  SymbolKind,
-  TextEdit,
-  TextDocuments,
-  TextDocumentSyncKind,
-  WorkspaceEdit,
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { KpaLanguageService } from '@koppajs/koppajs-language-core';
 import {
-  KpaLanguageService,
-  type KpaServiceCodeAction,
-  type KpaServiceCompletion,
-  type KpaServiceDocumentSymbol,
-  type KpaServiceHover,
-  type KpaServiceLocation,
-  type KpaServiceTextEdit,
-} from '@koppajs/language-core';
+  applyWorkspaceFolderChange,
+  collectWorkspaceRoots,
+  fromDiagnostic,
+  serverCapabilities,
+  toRequestFailedResponseError,
+  toCodeAction,
+  toCompletionItem,
+  toDiagnostic,
+  toDocumentSymbol,
+  toHover,
+  toLocation,
+  toRange,
+  toWorkspaceEdit,
+  toWorkspaceSymbol,
+  watchedFilesRegistrationOptions,
+} from './protocol';
 
 const connection: Connection = createConnection(ProposedFeatures.all);
 const documents = new TextDocuments(TextDocument);
 const languageService = new KpaLanguageService();
+let supportsWorkspaceFolderChanges = false;
+let supportsDynamicWatchedFiles = false;
+let workspaceRoots: readonly string[] = [];
 
-connection.onInitialize((params: InitializeParams): InitializeResult => {
-  languageService.setWorkspaceRoots(collectWorkspaceRoots(params));
+connection.onInitialize((params) => {
+  supportsWorkspaceFolderChanges = Boolean(
+    params.capabilities.workspace?.workspaceFolders,
+  );
+  supportsDynamicWatchedFiles = Boolean(
+    params.capabilities.workspace?.didChangeWatchedFiles?.dynamicRegistration,
+  );
+  workspaceRoots = collectWorkspaceRoots(params);
+  languageService.setWorkspaceRoots(workspaceRoots);
 
   return {
-    capabilities: {
-      codeActionProvider: {
-        codeActionKinds: [CodeActionKind.QuickFix],
-      },
-      completionProvider: {
-        triggerCharacters: ['{', '.', '<', ' ', ':', '@'],
-      },
-      definitionProvider: true,
-      documentSymbolProvider: true,
-      hoverProvider: true,
-      referencesProvider: true,
-      renameProvider: {
-        prepareProvider: true,
-      },
-      textDocumentSync: TextDocumentSyncKind.Incremental,
-      workspaceSymbolProvider: true,
-      workspace: {
-        workspaceFolders: {
-          changeNotifications: true,
-          supported: true,
-        },
-      },
-    },
+    capabilities: serverCapabilities,
   };
+});
+
+connection.onInitialized(() => {
+  if (supportsDynamicWatchedFiles) {
+    void connection.client
+      .register(
+        DidChangeWatchedFilesNotification.type,
+        watchedFilesRegistrationOptions,
+      )
+      .catch((error: unknown) => {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Unknown registration error.';
+        connection.console.error(
+          `Failed to register watched files for KoppaJS language server: ${message}`,
+        );
+      });
+  }
+
+  if (!supportsWorkspaceFolderChanges) {
+    return;
+  }
+
+  connection.workspace.onDidChangeWorkspaceFolders((event) => {
+    workspaceRoots = applyWorkspaceFolderChange(workspaceRoots, event);
+    languageService.setWorkspaceRoots(workspaceRoots);
+    refreshDiagnosticsForOpenDocuments();
+  });
 });
 
 documents.onDidOpen((event) => {
@@ -77,7 +87,10 @@ documents.onDidOpen((event) => {
     diagnostics: [],
     uri: event.document.uri,
   });
-  const affectedPaths = languageService.openDocument(event.document.uri, event.document.getText());
+  const affectedPaths = languageService.openDocument(
+    event.document.uri,
+    event.document.getText(),
+  );
 
   refreshDiagnosticsForUris([
     event.document.uri,
@@ -108,154 +121,169 @@ documents.onDidClose((event) => {
 });
 
 connection.onDidChangeWatchedFiles((params: DidChangeWatchedFilesParams) => {
-  const affectedPaths = new Set<string>();
+  let didInvalidateWorkspaceState = false;
 
   for (const change of params.changes) {
     if (!change.uri.startsWith('file:')) {
       continue;
     }
 
-    for (const affectedPath of languageService.invalidateFilePath(fileURLToPath(change.uri))) {
-      affectedPaths.add(affectedPath);
+    languageService.invalidateFilePath(fileURLToPath(change.uri));
+    didInvalidateWorkspaceState = true;
+  }
+
+  if (didInvalidateWorkspaceState) {
+    refreshDiagnosticsForOpenDocuments();
+  }
+});
+
+connection.onCompletion((params) => {
+  return runServiceRequest('Completion request failed.', () => {
+    const document = documents.get(params.textDocument.uri);
+
+    if (!document) {
+      return [];
     }
-  }
 
-  refreshDiagnosticsForAffectedPaths([...affectedPaths]);
+    return (
+      languageService.getCompletions(
+        document.uri,
+        document.offsetAt(params.position),
+      ) ?? []
+    ).map(toCompletionItem);
+  });
 });
 
-connection.onCompletion((params): CompletionItem[] => {
-  const document = documents.get(params.textDocument.uri);
+connection.onHover((params) => {
+  return runServiceRequest('Hover request failed.', () => {
+    const document = documents.get(params.textDocument.uri);
 
-  if (!document) {
-    return [];
-  }
+    if (!document) {
+      return null;
+    }
 
-  return (
-    languageService.getCompletions(document.uri, document.offsetAt(params.position)) ?? []
-  ).map(toCompletionItem);
-});
+    const hover = languageService.getHover(
+      document.uri,
+      document.offsetAt(params.position),
+    );
 
-connection.onHover((params): Hover | null => {
-  const document = documents.get(params.textDocument.uri);
-
-  if (!document) {
-    return null;
-  }
-
-  const hover = languageService.getHover(document.uri, document.offsetAt(params.position));
-
-  return hover ? toHover(hover) : null;
+    return hover ? toHover(hover) : null;
+  });
 });
 
 connection.onDefinition((params) => {
-  const document = documents.get(params.textDocument.uri);
+  return runServiceRequest('Definition request failed.', () => {
+    const document = documents.get(params.textDocument.uri);
 
-  if (!document) {
-    return [];
-  }
+    if (!document) {
+      return [];
+    }
 
-  return (
-    languageService.getDefinitions(document.uri, document.offsetAt(params.position)) ?? []
-  ).map(toLocation);
+    return (
+      languageService.getDefinitions(
+        document.uri,
+        document.offsetAt(params.position),
+      ) ?? []
+    ).map(toLocation);
+  });
 });
 
 connection.onReferences((params: ReferenceParams) => {
-  const document = documents.get(params.textDocument.uri);
+  return runServiceRequest('References request failed.', () => {
+    const document = documents.get(params.textDocument.uri);
 
-  if (!document) {
-    return [];
-  }
+    if (!document) {
+      return [];
+    }
 
-  return (
-    languageService.getReferences(
-      document.uri,
-      document.offsetAt(params.position),
-      params.context.includeDeclaration,
-    ) ?? []
-  ).map(toLocation);
+    return (
+      languageService.getReferences(
+        document.uri,
+        document.offsetAt(params.position),
+        params.context.includeDeclaration,
+      ) ?? []
+    ).map(toLocation);
+  });
 });
 
 connection.onPrepareRename((params) => {
-  const document = documents.get(params.textDocument.uri);
+  return runServiceRequest('Prepare rename request failed.', () => {
+    const document = documents.get(params.textDocument.uri);
 
-  if (!document) {
-    return null;
-  }
+    if (!document) {
+      return null;
+    }
 
-  const renameInfo = languageService.getRenameInfo(
-    document.uri,
-    document.offsetAt(params.position),
+    const renameInfo = languageService.getRenameInfo(
+      document.uri,
+      document.offsetAt(params.position),
+    );
+
+    return renameInfo
+      ? {
+          placeholder: renameInfo.placeholder,
+          range: toRange(renameInfo.range),
+        }
+      : null;
+  });
+});
+
+connection.onRenameRequest((params: RenameParams) => {
+  return runServiceRequest('Rename request failed.', () => {
+    const document = documents.get(params.textDocument.uri);
+
+    if (!document) {
+      return null;
+    }
+
+    const edits = languageService.getRenameEdits(
+      document.uri,
+      document.offsetAt(params.position),
+      params.newName,
+    );
+
+    return edits ? toWorkspaceEdit(edits) : null;
+  });
+});
+
+connection.onCodeAction((params) => {
+  return runServiceRequest('Code action request failed.', () =>
+    languageService
+      .getCodeActions(
+        params.textDocument.uri,
+        params.context.diagnostics.map((diagnostic) =>
+          fromDiagnostic(diagnostic),
+        ),
+      )
+      .map((action) => toCodeAction(action, params.context.diagnostics)),
   );
-
-  return renameInfo
-    ? {
-        placeholder: renameInfo.placeholder,
-        range: toRange(renameInfo.range),
-      }
-    : null;
 });
 
-connection.onRenameRequest((params: RenameParams): WorkspaceEdit | null => {
-  const document = documents.get(params.textDocument.uri);
-
-  if (!document) {
-    return null;
-  }
-
-  const edits = languageService.getRenameEdits(
-    document.uri,
-    document.offsetAt(params.position),
-    params.newName,
+connection.onDocumentSymbol((params) => {
+  return runServiceRequest('Document symbol request failed.', () =>
+    languageService
+      .getDocumentSymbols(params.textDocument.uri)
+      .map(toDocumentSymbol),
   );
-
-  return edits ? toWorkspaceEdit(edits) : null;
 });
 
-connection.onCodeAction((params): CodeAction[] => {
-  return languageService
-    .getCodeActions(
-      params.textDocument.uri,
-      params.context.diagnostics.map((diagnostic) => fromDiagnostic(diagnostic)),
-    )
-    .map((action) => toCodeAction(action, params.context.diagnostics));
-});
-
-connection.onDocumentSymbol((params): DocumentSymbol[] => {
-  return languageService.getDocumentSymbols(params.textDocument.uri).map(toDocumentSymbol);
-});
-
-connection.onWorkspaceSymbol((params): SymbolInformation[] => {
-  return languageService.getWorkspaceSymbols(params.query).map((entry) => ({
-    kind: toSymbolKind(entry.kind),
-    location: {
-      range: toRange(entry.range),
-      uri: filePathToUri(entry.filePath),
-    },
-    name: entry.name,
-  }));
+connection.onWorkspaceSymbol((params) => {
+  return runServiceRequest('Workspace symbol request failed.', () =>
+    languageService.getWorkspaceSymbols(params.query).map(toWorkspaceSymbol),
+  );
 });
 
 documents.listen(connection);
 connection.listen();
 
-function collectWorkspaceRoots(params: InitializeParams): readonly string[] {
-  const roots = new Set<string>();
-
-  for (const folder of params.workspaceFolders ?? []) {
-    if (folder.uri.startsWith('file:')) {
-      roots.add(fileURLToPath(folder.uri));
-    }
-  }
-
-  if (params.rootUri?.startsWith('file:')) {
-    roots.add(fileURLToPath(params.rootUri));
-  }
-
-  return [...roots];
+function refreshDiagnosticsForAffectedPaths(paths: readonly string[]): void {
+  refreshDiagnosticsForUris(
+    languageService.getOpenDocumentUrisForAffectedPaths(paths),
+  );
 }
 
-function refreshDiagnosticsForAffectedPaths(paths: readonly string[]): void {
-  refreshDiagnosticsForUris(languageService.getOpenDocumentUrisForAffectedPaths(paths));
+function refreshDiagnosticsForOpenDocuments(): void {
+  refreshDiagnosticsForUris(documents.all().map((document) => document.uri));
 }
 
 function refreshDiagnosticsForUris(uris: readonly string[]): void {
@@ -271,239 +299,10 @@ function publishDiagnostics(uri: string): void {
   });
 }
 
-function toDiagnostic(diagnostic: {
-  code?: number | string;
-  data?: unknown;
-  message: string;
-  range: {
-    endChar: number;
-    line: number;
-    startChar: number;
-  };
-}): Diagnostic {
-  return {
-    code: diagnostic.code,
-    data: diagnostic.data,
-    message: diagnostic.message,
-    range: {
-      end: {
-        character: diagnostic.range.endChar,
-        line: diagnostic.range.line,
-      },
-      start: {
-        character: diagnostic.range.startChar,
-        line: diagnostic.range.line,
-      },
-    },
-    severity: DiagnosticSeverity.Warning,
-    source: 'koppa-diagnostics',
-  };
-}
-
-function fromDiagnostic(diagnostic: Diagnostic): {
-  code?: number | string;
-  data?: unknown;
-  message: string;
-  range: {
-    endChar: number;
-    line: number;
-    startChar: number;
-  };
-} {
-  return {
-    code:
-      typeof diagnostic.code === 'number' || typeof diagnostic.code === 'string'
-        ? diagnostic.code
-        : undefined,
-    data: diagnostic.data,
-    message: diagnostic.message,
-    range: {
-      endChar: diagnostic.range.end.character,
-      line: diagnostic.range.start.line,
-      startChar: diagnostic.range.start.character,
-    },
-  };
-}
-
-function toHover(hover: KpaServiceHover): Hover {
-  return {
-    contents: {
-      kind: MarkupKind.Markdown,
-      value: hover.contents
-        .map((content) =>
-          content.kind === 'code'
-            ? `\`\`\`${content.language ?? ''}\n${content.value}\n\`\`\``
-            : content.value,
-        )
-        .join('\n\n'),
-    },
-    range: toRange(hover.range),
-  };
-}
-
-function toCompletionItem(completion: KpaServiceCompletion): CompletionItem {
-  const insertText = completion.insertText ?? completion.label;
-  const item: CompletionItem = {
-    detail: completion.detail,
-    documentation: completion.documentation
-      ? {
-          kind: MarkupKind.Markdown,
-          value: completion.documentation,
-        }
-      : undefined,
-    insertText: completion.replacementRange ? undefined : insertText,
-    insertTextFormat:
-      completion.insertTextFormat === 'snippet'
-        ? InsertTextFormat.Snippet
-        : InsertTextFormat.PlainText,
-    kind: toCompletionItemKind(completion.kind),
-    label: completion.label,
-  };
-
-  if (completion.replacementRange) {
-    item.textEdit = TextEdit.replace(toRange(completion.replacementRange), insertText);
+function runServiceRequest<T>(fallbackMessage: string, operation: () => T): T {
+  try {
+    return operation();
+  } catch (error) {
+    throw toRequestFailedResponseError(error, fallbackMessage);
   }
-
-  return item;
-}
-
-function toLocation(location: KpaServiceLocation): Location {
-  return {
-    range: toRange(location.range),
-    uri: location.uri,
-  };
-}
-
-function toCodeAction(
-  action: KpaServiceCodeAction,
-  diagnostics: readonly Diagnostic[],
-): CodeAction {
-  return {
-    diagnostics:
-      action.diagnosticCodes.length > 0
-        ? diagnostics.filter((diagnostic) =>
-            action.diagnosticCodes.includes(String(diagnostic.code)),
-          )
-        : undefined,
-    edit: toWorkspaceEdit(action.edits),
-    isPreferred: action.isPreferred,
-    kind: CodeActionKind.QuickFix,
-    title: action.title,
-  };
-}
-
-function toWorkspaceEdit(edits: readonly KpaServiceTextEdit[]): WorkspaceEdit {
-  const changes: WorkspaceEdit['changes'] = {};
-
-  for (const edit of edits) {
-    const existingEdits = changes[edit.uri] ?? [];
-
-    existingEdits.push({
-      newText: edit.newText,
-      range: toRange(edit.range),
-    });
-    changes[edit.uri] = existingEdits;
-  }
-
-  return { changes };
-}
-
-function toDocumentSymbol(symbol: KpaServiceDocumentSymbol): DocumentSymbol {
-  return {
-    children: symbol.children.map(toDocumentSymbol),
-    detail: symbol.detail,
-    kind: toSymbolKind(symbol.kind),
-    name: symbol.name,
-    range: toRange(symbol.range),
-    selectionRange: toRange(symbol.selectionRange),
-  };
-}
-
-function toRange(range: {
-  end: { character: number; line: number };
-  start: { character: number; line: number };
-}): Range {
-  return {
-    end: {
-      character: range.end.character,
-      line: range.end.line,
-    },
-    start: {
-      character: range.start.character,
-      line: range.start.line,
-    },
-  };
-}
-
-function toCompletionItemKind(kind: string): CompletionItemKind {
-  switch (kind) {
-    case 'alias':
-    case 'module':
-    case 'import':
-    case 'import-type':
-      return CompletionItemKind.Module;
-    case 'class':
-      return CompletionItemKind.Class;
-    case 'const':
-    case 'let':
-    case 'local var':
-    case 'var':
-    case 'variable':
-      return CompletionItemKind.Variable;
-    case 'enum':
-      return CompletionItemKind.Enum;
-    case 'function':
-    case 'method':
-      return CompletionItemKind.Function;
-    case 'getter':
-    case 'property':
-    case 'setter':
-      return CompletionItemKind.Property;
-    case 'interface':
-      return CompletionItemKind.Interface;
-    case 'keyword':
-      return CompletionItemKind.Keyword;
-    case 'snippet':
-      return CompletionItemKind.Snippet;
-    case 'type':
-    case 'type-alias':
-      return CompletionItemKind.TypeParameter;
-    case 'warning':
-      return CompletionItemKind.Text;
-    default:
-      return CompletionItemKind.Text;
-  }
-}
-
-function toSymbolKind(kind: string): SymbolKind {
-  switch (kind) {
-    case 'component':
-    case 'class':
-      return SymbolKind.Class;
-    case 'enum':
-      return SymbolKind.Enum;
-    case 'function':
-      return SymbolKind.Function;
-    case 'import':
-    case 'import-type':
-    case 'module':
-      return SymbolKind.Module;
-    case 'interface':
-      return SymbolKind.Interface;
-    case 'namespace':
-      return SymbolKind.Namespace;
-    case 'package':
-      return SymbolKind.Package;
-    case 'type':
-    case 'type-alias':
-      return SymbolKind.TypeParameter;
-    case 'variable':
-      return SymbolKind.Variable;
-    default:
-      return SymbolKind.Object;
-  }
-}
-
-function filePathToUri(filePath: string): string {
-  return pathToFileURL(filePath).toString();
 }
