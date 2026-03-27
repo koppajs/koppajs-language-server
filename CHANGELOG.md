@@ -1,9 +1,30 @@
-# Changelog
+# Change Log
 
-All notable changes to `@koppajs/koppajs-language-server` will be documented in
-this file.
+All notable changes to **@koppajs/koppajs-language-server** are documented in this file.
 
-The format is intentionally simple and manual.
+This project uses a **manual, tag-driven release process**.
+Only tagged versions represent official releases.
+
+This changelog documents **intentional milestones and guarantees**,
+not every internal refactor.
+
+---
+
+## [Unreleased]
+
+This section is intentionally empty.
+
+---
+
+## 0.1.1
+
+- widen the supported `@koppajs/koppajs-language-core` range to `^0.1.3`
+- add the governed repository documentation contract, local `check:docs`
+  validation, and the matching Husky pre-commit hook
+- align the Node ESM import paths and ESLint config with the current module and
+  script layout
+
+---
 
 ## 0.1.0
 
