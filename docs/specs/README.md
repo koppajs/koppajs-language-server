@@ -1,29 +1,27 @@
 # Specifications
 
-Specs define user-visible repository behavior in concrete terms.
+Specs define intended behavior before or alongside implementation work.
+They are the highest-precedence behavioral documents in this repository once approved.
 
-## When a Spec Is Required
+## When To Add Or Update A Spec
 
-Create or update a spec when changing:
+- A public behavior changes
+- A contributor-facing workflow changes
+- A governed root document changes shape
+- A new subsystem takes on externally visible behavior
 
-- advertised LSP capabilities,
-- diagnostics behavior,
-- rename or symbol behavior,
-- or any other client-visible contract exposed by this package.
+## Required Sections
 
-## Minimum Spec Contents
-
-- description
-- inputs
-- outputs
+- scope
 - behavior
 - constraints
 - edge cases
-- acceptance criteria
-- evolution phase
-- completeness level
-- known gaps
-- deferred complexity
-- technical debt items
+- validation or acceptance criteria
 
-Start from [TEMPLATE.md](TEMPLATE.md).
+Use the local spec template when one exists.
+
+## Current Specs
+
+- `TEMPLATE.md`
+- `language-server-lsp-contract.md`
+- `repository-documentation-contract.md`

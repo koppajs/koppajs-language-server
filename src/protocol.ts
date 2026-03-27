@@ -34,7 +34,7 @@ import {
   type SymbolInformation,
   type WorkspaceFoldersChangeEvent,
   type WorkspaceEdit,
-} from 'vscode-languageserver/node';
+} from 'vscode-languageserver/node.js';
 
 interface KpaDiagnostic {
   code?: number | string;

@@ -4,13 +4,13 @@ import {
   DidChangeWatchedFilesNotification,
   ProposedFeatures,
   TextDocuments,
-} from 'vscode-languageserver/node';
+} from 'vscode-languageserver/node.js';
 import type {
   Connection,
   DidChangeWatchedFilesParams,
   ReferenceParams,
   RenameParams,
-} from 'vscode-languageserver/node';
+} from 'vscode-languageserver/node.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { KpaLanguageService } from '@koppajs/koppajs-language-core';
 import {
@@ -29,7 +29,7 @@ import {
   toWorkspaceEdit,
   toWorkspaceSymbol,
   watchedFilesRegistrationOptions,
-} from './protocol';
+} from './protocol.js';
 
 const connection: Connection = createConnection(ProposedFeatures.all);
 const documents = new TextDocuments(TextDocument);

@@ -15,7 +15,7 @@ test('package manifest publishes the scoped server package against the released 
   assert.equal(packageManifest.name, '@koppajs/koppajs-language-server');
   assert.equal(
     packageManifest.dependencies['@koppajs/koppajs-language-core'],
-    '^0.1.2',
+    '^0.1.3',
   );
   assert.equal(
     packageManifest.dependencies['@koppajs/language-core'],

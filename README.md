@@ -1,10 +1,70 @@
-# @koppajs/koppajs-language-server
+<a id="readme-top"></a>
+
+<div align="center">
+  <img src="https://public-assets-1b57ca06-687a-4142-a525-0635f7649a5c.s3.eu-central-1.amazonaws.com/koppajs/koppajs-logo-text-900x226.png" width="500" alt="KoppaJS Logo">
+</div>
+
+<br>
+
+<div align="center">
+  <a href="https://www.npmjs.com/package/@koppajs/koppajs-language-server"><img src="https://img.shields.io/npm/v/@koppajs/koppajs-language-server?style=flat-square" alt="npm version"></a>
+  <a href="https://github.com/koppajs/koppajs-language-server/actions"><img src="https://img.shields.io/github/actions/workflow/status/koppajs/koppajs-language-server/ci.yml?branch=main&style=flat-square" alt="CI Status"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square" alt="License"></a>
+</div>
+
+<br>
+
+<div align="center">
+  <h1 align="center">@koppajs/koppajs-language-server</h1>
+  <h3 align="center">Language Server Protocol adapter for KoppaJS language tooling</h3>
+  <p align="center">
+    <i>A thin LSP transport that exposes the shared KoppaJS language layer to editors.</i>
+  </p>
+</div>
+
+<br>
+
+<div align="center">
+  <p align="center">
+    <a href="https://github.com/koppajs/koppajs-documentation">Documentation</a>
+    &middot;
+    <a href="https://github.com/koppajs/koppajs-language-core">Language Core</a>
+    &middot;
+    <a href="https://github.com/koppajs/koppajs-vscode-extension">VS Code Extension</a>
+    &middot;
+    <a href="https://github.com/koppajs/koppajs-kpa-check">KPA Check</a>
+    &middot;
+    <a href="https://github.com/koppajs/koppajs-language-server/issues">Issues</a>
+  </p>
+</div>
+
+<br>
+
+<details>
+<summary>Table of Contents</summary>
+  <ol>
+    <li><a href="#purpose">Purpose</a></li>
+    <li><a href="#repository-classification">Repository Classification</a></li>
+    <li><a href="#ownership-boundaries">Ownership Boundaries</a></li>
+    <li><a href="#public-contract">Public Contract</a></li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#local-development">Local Development</a></li>
+    <li><a href="#ecosystem-fit">Ecosystem Fit</a></li>
+    <li><a href="#architecture-governance">Architecture & Governance</a></li>
+    <li><a href="#community-contribution">Community & Contribution</a></li>
+    <li><a href="#license">License</a></li>
+  </ol>
+</details>
+
+---
 
 ## Purpose
 
 `@koppajs/koppajs-language-server` exposes KoppaJS semantic editor features through the
 Language Server Protocol. It is a thin adapter over `@koppajs/koppajs-language-core`,
 not the owner of parsing, diagnostics rules, or editor-specific UX.
+
+---
 
 ## Repository Classification
 
@@ -14,6 +74,8 @@ not the owner of parsing, diagnostics rules, or editor-specific UX.
   repository quality gates
 - UI surface: none
 - Maturity: pre-1.0, intentionally narrow
+
+---
 
 ## Ownership Boundaries
 
@@ -30,6 +92,8 @@ This repository does not own:
 - editor activation, snippets, or UI behavior
 - CLI diagnostics
 - package publication/versioning for `@koppajs/koppajs-language-core`
+
+---
 
 ## Public Contract
 
@@ -50,6 +114,8 @@ The public surface is intentionally small:
 
 This package does not expose a stable library API beyond the executable server
 module path.
+
+---
 
 ## Usage
 
@@ -77,10 +143,12 @@ const client = new LanguageClient(
 await client.start();
 ```
 
+---
+
 ## Local Development
 
 The repository consumes the published
-`@koppajs/koppajs-language-core@^0.1.2` package directly from npm.
+`@koppajs/koppajs-language-core@^0.1.3` package directly from npm.
 
 Common commands:
 
@@ -96,6 +164,8 @@ Compatibility policy:
 
 - [docs/meta/version-compatibility.md](./docs/meta/version-compatibility.md)
 
+---
+
 ## Ecosystem Fit
 
 This package sits between the editor client and the shared language semantics:
@@ -106,25 +176,50 @@ This package sits between the editor client and the shared language semantics:
 - editor clients such as `koppajs-vscode-extension` should remain thin adapters
   on top of this package
 
-## Governance
+---
 
-Repository intent, architecture, rules, and specs live in the meta layer:
+## Architecture & Governance
+
+Project intent, contributor rules, and documentation contracts live in the local repo meta layer:
 
 - [AI_CONSTITUTION.md](./AI_CONSTITUTION.md)
 - [ARCHITECTURE.md](./ARCHITECTURE.md)
 - [DECISION_HIERARCHY.md](./DECISION_HIERARCHY.md)
 - [DEVELOPMENT_RULES.md](./DEVELOPMENT_RULES.md)
 - [TESTING_STRATEGY.md](./TESTING_STRATEGY.md)
-- [ROADMAP.md](./ROADMAP.md)
 - [RELEASE.md](./RELEASE.md)
+- [ROADMAP.md](./ROADMAP.md)
 - [CHANGELOG.md](./CHANGELOG.md)
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
-- [docs/specs/language-server-lsp-contract.md](./docs/specs/language-server-lsp-contract.md)
-- [docs/architecture/module-boundaries.md](./docs/architecture/module-boundaries.md)
-- [docs/quality/quality-gates.md](./docs/quality/quality-gates.md)
+- [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
+- [docs/specs/README.md](./docs/specs/README.md)
+- [docs/specs/repository-documentation-contract.md](./docs/specs/repository-documentation-contract.md)
+- [docs/architecture/README.md](./docs/architecture/README.md)
 - [docs/meta/README.md](./docs/meta/README.md)
-- [docs/meta/version-compatibility.md](./docs/meta/version-compatibility.md)
+- [docs/quality/README.md](./docs/quality/README.md)
+
+The file-shape contract for `README.md`, `CHANGELOG.md`, `CODE_OF_CONDUCT.md`, and `CONTRIBUTING.md` is defined in [docs/specs/repository-documentation-contract.md](./docs/specs/repository-documentation-contract.md).
+
+Run the local document guard before committing:
+
+```bash
+npm run check:docs
+```
+
+---
+
+## Community & Contribution
+
+Issues and pull requests are welcome:
+
+https://github.com/koppajs/koppajs-language-server/issues
+
+Contributor workflow details live in [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+Community expectations live in [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md).
+
+---
 
 ## License
 
-Apache License 2.0. See [LICENSE](./LICENSE).
+Apache License 2.0 — © 2026 KoppaJS, Bastian Bensch
