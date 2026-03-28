@@ -10,7 +10,7 @@ The effective compatibility contract is the dependency range in
 
 For the current release line, the server declares:
 
-- `@koppajs/koppajs-language-core: ^0.1.3`
+- `@koppajs/koppajs-language-core: ^0.1.4`
 
 The server must not claim compatibility outside the range it actually declares
 and validates.

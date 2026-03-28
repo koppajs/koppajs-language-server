@@ -7,6 +7,7 @@ These gates describe what should be true before merging non-trivial changes.
 | Gate            | Requirement                                                          |
 | --------------- | -------------------------------------------------------------------- |
 | Documentation   | Code, specs, ADRs, and contributor docs do not contradict each other |
+| Meta Layer      | `npm run check:meta` passes                                          |
 | Formatting      | `npm run format:check` passes                                        |
 | Lint            | `npm run lint` passes                                                |
 | Type Safety     | `npm run typecheck` passes                                           |
@@ -18,11 +19,12 @@ These gates describe what should be true before merging non-trivial changes.
 
 ## Current Reality
 
-- `npm run validate` enforces formatting, linting, typechecking, build, and unit
-  plus integration tests locally.
-- GitHub Actions runs `npm run validate` on pushes to `main` and `develop` and
-  on pull requests.
-- GitHub Actions publishes tagged releases after validation and version checks.
+- `npm run validate` enforces documentation, meta-layer, formatting, linting,
+  typechecking, build, and unit plus integration tests locally.
+- GitHub Actions runs `npm run validate` on Node.js 22 and Node.js 24 for pushes
+  to `main` and `develop` and on pull requests.
+- GitHub Actions publishes tagged releases from Node.js 22 after validation and
+  version checks.
 - Manual smoke checks remain necessary for broader editor-client interactions
   beyond the maintained stdio-LSP integration harness.
 

@@ -27,16 +27,19 @@
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "prepack": "npm run validate",
-    "release:check": "npm pack --dry-run",
+    "release:check": "npm pack --dry-run --ignore-scripts",
     "test": "npm run build && node --test test/*.test.cjs",
-    "check": "npm run check:docs && npm run format:check && npm run lint && npm run typecheck && npm run test",
+    "check": "npm run check:docs && npm run check:meta && npm run format:check && npm run lint && npm run typecheck && npm run test",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "validate": "npm run check:docs && npm run check",
-    "check:docs": "node scripts/check-doc-contract.mjs",
+    "validate": "npm run check",
+    "check:docs": "npm run check:docs:contract && npm run check:docs:semantics",
+    "check:docs:contract": "node scripts/check-doc-contract.mjs",
+    "check:docs:semantics": "node scripts/check-doc-semantics.mjs",
+    "check:meta": "node scripts/check-meta-layer.mjs",
     "prepare": "husky"
   },
   "dependencies": {
-    "@koppajs/koppajs-language-core": "^0.1.3",
+    "@koppajs/koppajs-language-core": "^0.1.4",
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.12"
   },
@@ -52,7 +55,7 @@
     "husky": "^9.1.7"
   },
   "engines": {
-    "node": ">=20",
+    "node": ">=22",
     "npm": ">=10"
   },
   "publishConfig": {

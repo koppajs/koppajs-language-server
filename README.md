@@ -148,11 +148,26 @@ await client.start();
 ## Local Development
 
 The repository consumes the published
-`@koppajs/koppajs-language-core@^0.1.3` package directly from npm.
+`@koppajs/koppajs-language-core@^0.1.4` package directly from npm.
+
+Requirements:
+
+- Node.js >= 22
+- npm >= 10
+
+Maintainer default:
+
+- `.nvmrc` pins Node.js 22 for local work
+- `.npmrc` enforces engine compatibility during install
+
+CI validates the repository on Node.js 22 and Node.js 24.
 
 Common commands:
 
+- `npm run check:docs`
+- `npm run check:meta`
 - `npm run format`
+- `npm run format:check`
 - `npm run lint`
 - `npm run typecheck`
 - `npm run build`
@@ -171,7 +186,9 @@ Compatibility policy:
 This package sits between the editor client and the shared language semantics:
 
 - `@koppajs/koppajs-language-core` owns parsing, diagnostics, symbol extraction, and
-  semantic analysis
+  semantic analysis, including workspace component discovery through explicit
+  `Core.take(...)` registrations and the canonical `.kpa` component contract
+  shared with `@koppajs/koppajs-core` and `@koppajs/koppajs-vite-plugin`
 - `@koppajs/koppajs-language-server` exposes that shared truth over LSP
 - editor clients such as `koppajs-vscode-extension` should remain thin adapters
   on top of this package
@@ -204,6 +221,7 @@ Run the local document guard before committing:
 
 ```bash
 npm run check:docs
+npm run check:meta
 ```
 
 ---

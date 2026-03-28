@@ -80,6 +80,8 @@ Repository-specific notes may appear inside the shared sections, but the section
 ## Validation & Enforcement
 
 The repository must provide a local validator at `scripts/check-doc-contract.mjs`.
+The repository should also provide a semantic consistency validator at
+`scripts/check-doc-semantics.mjs`.
 
 The validator runs through:
 
@@ -87,7 +89,8 @@ The validator runs through:
 npm run check:docs
 ```
 
-The local `pre-commit` hook must run the same command before allowing the commit to proceed.
+The local `pre-commit` hook must run the same documentation command before
+allowing the commit to proceed.
 
 ## Acceptance Criteria
 

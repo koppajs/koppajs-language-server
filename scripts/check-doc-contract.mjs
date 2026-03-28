@@ -80,7 +80,11 @@ const checks = [
   },
   {
     file: 'package.json',
-    snippets: ['check:docs', 'scripts/check-doc-contract.mjs'],
+    snippets: [
+      'check:docs',
+      'scripts/check-doc-contract.mjs',
+      'scripts/check-doc-semantics.mjs',
+    ],
   },
   {
     file: '.husky/pre-commit',
