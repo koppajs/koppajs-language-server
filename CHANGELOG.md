@@ -12,10 +12,17 @@ not every internal refactor.
 
 ## [Unreleased]
 
+This section is intentionally empty.
+
+---
+
+## 0.1.2
+
 - raise the repository Node.js minimum to `>=22` and expand CI validation to
   Node.js 22 and 24
 - add semantic documentation/meta-layer guards, align maintainer Node defaults,
-  and extend stdio-LSP coverage for workspace component and quick-fix flows
+  and extend stdio-LSP coverage for workspace component, semantic request, and
+  quick-fix flows
 
 ---
 

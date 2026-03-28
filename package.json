@@ -1,6 +1,6 @@
 {
   "name": "@koppajs/koppajs-language-server",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Language Server Protocol adapter for KoppaJS language tooling.",
   "license": "Apache-2.0",
   "repository": {
