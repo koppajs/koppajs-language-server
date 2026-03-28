@@ -59,9 +59,10 @@ Before committing, run:
 
 ```bash
 npm run check:docs
+npm run check:meta
 ```
 
-The local pre-commit hook runs the same guard and blocks the commit when the contract fails.
+The local pre-commit hook runs the same documentation guard and `npm run check:meta` and blocks the commit when those checks fail.
 
 <p align="right">(<a href="#contributing-top">back to top</a>)</p>
 
@@ -69,7 +70,7 @@ The local pre-commit hook runs the same guard and blocks the commit when the con
 
 ## Requirements
 
-- Node.js >= 20
+- Node.js >= 22
 - npm >= 10
 
 Install dependencies:
@@ -90,7 +91,7 @@ A safe default workflow is:
 
 1. Read the affected code, tests, and local governance docs before changing behavior.
 2. Update the owned specs and governed root docs in the same change when the contract moves.
-3. Run `npm run check:docs` before broader quality checks.
+3. Run `npm run check:docs` and `npm run check:meta` before broader quality checks.
 4. Run the repository quality gates that cover the affected behavior.
 5. Keep unrelated edits out of the same change whenever possible.
 
@@ -98,6 +99,7 @@ Repository-specific focus for this project:
 
 - Keep this repository a thin adapter over `@koppajs/koppajs-language-core`.
 - Align capability declarations, mappings, tests, and docs in the same change.
+- Expect GitHub Actions validation on Node.js 22 and Node.js 24.
 
 <p align="right">(<a href="#contributing-top">back to top</a>)</p>
 
@@ -113,6 +115,7 @@ Expectations for changes in this repository:
 - prefer updating governing docs over leaving intent implicit
 - keep quality-gate commands passing before asking for review
 - do not silently change public behavior or contributor workflow
+- keep `.nvmrc`, `.npmrc`, and workflow docs aligned with the declared engine policy
 
 <p align="right">(<a href="#contributing-top">back to top</a>)</p>
 
@@ -154,6 +157,7 @@ That means:
 | Command                 | Description                                                                           |
 | ----------------------- | ------------------------------------------------------------------------------------- |
 | `npm run check:docs`    | Validate README, CHANGELOG, CODE_OF_CONDUCT, CONTRIBUTING, and the local doc contract |
+| `npm run check:meta`    | Validate required repository structure and workflow/meta-layer files                  |
 | `npm run check`         | Run the main local quality gate                                                       |
 | `npm run validate`      | Run the repository validation flow                                                    |
 | `npm run build`         | Build the project output                                                              |

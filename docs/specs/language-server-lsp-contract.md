@@ -67,7 +67,10 @@ LSP and what shape the client can rely on.
    changed file paths in `KpaLanguageService`, and conservatively republishes
    diagnostics for all open documents.
 9. On feature requests, the server delegates semantic work to
-   `KpaLanguageService` and maps the returned values into LSP objects.
+   `KpaLanguageService` and maps the returned values into LSP objects. That
+   includes component-aware behavior derived from explicit `.kpa` imports and
+   workspace `Core.take(...)` registrations discovered through the shared
+   language-core source analysis.
 10. Request-handler failures from `KpaLanguageService` are translated into LSP
     `RequestFailed` errors instead of surfacing as raw internal failures.
 11. Diagnostics are always emitted as warnings, and code actions are advertised

@@ -4,8 +4,10 @@
 
 The repository uses two automated layers plus explicit manual smoke checks:
 
+- repository contract checks with `npm run check:docs` and `npm run check:meta`
 - `node:test` contract tests for pure protocol mapping and package metadata
 - `node:test` integration tests against the built stdio LSP server
+- GitHub Actions validation on Node.js 22 and Node.js 24
 - manual smoke verification for broader editor-client behavior
 
 Local validation runs through `npm run validate`.
@@ -16,6 +18,8 @@ Local validation runs through `npm run validate`.
 - Put protocol mapping and capability declarations under direct unit tests.
 - Cover critical runtime flows through the real stdio client/server boundary.
 - Do not add fake tests that restate implementation without protecting behavior.
+- `npm run check:docs` combines structural and semantic documentation validation.
+- `npm run check:meta` validates the repository shape and required workflow/meta files.
 
 ## Test Pyramid
 
@@ -42,6 +46,8 @@ Use integration tests for:
 - watched-file invalidation and diagnostics refresh through real notifications
 - feature round-trips for completions, hover, navigation, rename, quick fixes,
   and symbol requests
+- workspace-registered component flows discovered through `Core.take(...)`
+- unresolved-component import quick fixes
 
 These tests must communicate with the built `dist/server.js` process over the
 actual LSP transport rather than importing `src/server.ts` directly.

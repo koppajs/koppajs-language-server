@@ -15,14 +15,26 @@ test('package manifest publishes the scoped server package against the released 
   assert.equal(packageManifest.name, '@koppajs/koppajs-language-server');
   assert.equal(
     packageManifest.dependencies['@koppajs/koppajs-language-core'],
-    '^0.1.3',
+    '^0.1.4',
   );
   assert.equal(
     packageManifest.dependencies['@koppajs/language-core'],
     undefined,
   );
+  assert.equal(packageManifest.engines.node, '>=22');
   assert.equal(packageManifest.scripts.prepack, 'npm run validate');
-  assert.equal(packageManifest.scripts['release:check'], 'npm pack --dry-run');
+  assert.equal(
+    packageManifest.scripts['release:check'],
+    'npm pack --dry-run --ignore-scripts',
+  );
+  assert.equal(
+    packageManifest.scripts['check:docs'],
+    'npm run check:docs:contract && npm run check:docs:semantics',
+  );
+  assert.equal(
+    packageManifest.scripts['check:meta'],
+    'node scripts/check-meta-layer.mjs',
+  );
   assert.deepEqual(packageManifest.files, [
     'dist',
     'README.md',

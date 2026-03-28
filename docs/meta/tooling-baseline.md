@@ -10,12 +10,19 @@ The repository currently uses:
 - `node:test` for contract tests and stdio-LSP integration tests against the
   built runtime
 - npm with `package-lock.json` as the package-management baseline
-- GitHub Actions for CI validation and tag-driven release publishing
+- `.nvmrc` for the maintainer-default Node.js line
+- `.npmrc` for install-time engine enforcement
+- Node-based repository scripts for structural docs, semantic docs, and
+  meta-layer validation
+- GitHub Actions for CI validation on Node.js 22 and 24 and tag-driven release
+  publishing on Node.js 22
 
 ## Script Surface
 
 The supported scripts are:
 
+- `npm run check:docs`
+- `npm run check:meta`
 - `npm run format`
 - `npm run format:check`
 - `npm run lint`

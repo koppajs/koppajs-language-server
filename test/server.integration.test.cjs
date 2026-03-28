@@ -644,3 +644,274 @@ test('language features round-trip over stdio LSP requests', async (t) => {
     ),
   );
 });
+
+test('workspace-registered Core.take components resolve over stdio LSP', async (t) => {
+  const session = new LspServerSession(process.cwd());
+
+  t.after(async () => {
+    await session.close();
+  });
+
+  const workspaceDirectory = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'koppajs-language-server-integration-'),
+  );
+  const componentPath = path.join(workspaceDirectory, 'counter-component.kpa');
+  const bootstrapPath = path.join(workspaceDirectory, 'main.ts');
+  const pagePath = path.join(workspaceDirectory, 'app-view.kpa');
+  const componentUri = pathToFileURL(componentPath).href;
+  const pageUri = pathToFileURL(pagePath).href;
+  const pageText = [
+    '[template]',
+    '  <counter-component></counter-component>',
+    '[/template]',
+  ].join('\n');
+
+  fs.writeFileSync(path.join(workspaceDirectory, 'tsconfig.json'), '{}\n');
+  fs.writeFileSync(
+    componentPath,
+    [
+      '[template]',
+      '  <div></div>',
+      '[/template]',
+      '',
+      '[ts]',
+      '  return {',
+      '    props: {',
+      '      title: { type: String },',
+      '    },',
+      '  };',
+      '[/ts]',
+    ].join('\n'),
+  );
+  fs.writeFileSync(
+    bootstrapPath,
+    [
+      "import { Core } from '@koppajs/koppajs-core';",
+      "import counterComponent from './counter-component.kpa';",
+      '',
+      "Core.take(counterComponent, 'counter-component');",
+    ].join('\n'),
+  );
+  fs.writeFileSync(pagePath, pageText);
+
+  await initializeWorkspace(session, pathToFileURL(workspaceDirectory).href, {
+    workspaceFolders: true,
+  });
+  session.notify('textDocument/didOpen', {
+    textDocument: {
+      uri: pageUri,
+      languageId: 'kpa',
+      version: 1,
+      text: pageText,
+    },
+  });
+
+  const definitions = await session.request('textDocument/definition', {
+    textDocument: { uri: pageUri },
+    position: positionAt(pageText, pageText.indexOf('counter-component') + 1),
+  });
+  const completions = await session.request('textDocument/completion', {
+    textDocument: { uri: pageUri },
+    position: positionAt(pageText, pageText.indexOf('></counter-component>')),
+  });
+
+  assert(definitions.some((location) => location.uri === componentUri));
+  assert(completions.some((item) => item.label === 'title'));
+});
+
+test('unresolved component tags offer an import quick fix over stdio LSP', async (t) => {
+  const session = new LspServerSession(process.cwd());
+
+  t.after(async () => {
+    await session.close();
+  });
+
+  const workspaceDirectory = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'koppajs-language-server-integration-'),
+  );
+  const componentPath = path.join(workspaceDirectory, 'UserCard.kpa');
+  const pagePath = path.join(workspaceDirectory, 'Page.kpa');
+  const pageUri = pathToFileURL(pagePath).href;
+  const pageText = ['[template]', '  <UserCard />', '[/template]'].join('\n');
+
+  fs.writeFileSync(componentPath, '[template]\n  <div></div>\n[/template]\n');
+  fs.writeFileSync(pagePath, pageText);
+
+  await initializeWorkspace(session, pathToFileURL(workspaceDirectory).href, {
+    workspaceFolders: true,
+  });
+  session.notify('textDocument/didOpen', {
+    textDocument: {
+      uri: pageUri,
+      languageId: 'kpa',
+      version: 1,
+      text: pageText,
+    },
+  });
+
+  const diagnosticsNotification = await session.waitForNotification(
+    'textDocument/publishDiagnostics',
+    (message) =>
+      message.params.uri === pageUri &&
+      message.params.diagnostics.some(
+        (diagnostic) => diagnostic.code === 'kpa.unresolved-component-tag',
+      ),
+  );
+  const unresolvedComponentDiagnostic =
+    diagnosticsNotification.params.diagnostics.find(
+      (diagnostic) => diagnostic.code === 'kpa.unresolved-component-tag',
+    );
+
+  const codeActions = await session.request('textDocument/codeAction', {
+    textDocument: { uri: pageUri },
+    range: unresolvedComponentDiagnostic.range,
+    context: {
+      diagnostics: diagnosticsNotification.params.diagnostics,
+      only: ['quickfix'],
+    },
+  });
+
+  assert(
+    codeActions.some(
+      (action) =>
+        action.kind === 'quickfix' &&
+        changesForUri(action.edit, pageUri).some((edit) =>
+          edit.newText.includes("[ts]\n  import UserCard from './UserCard';"),
+        ),
+    ),
+  );
+});
+
+test('loop-scope completions round-trip over stdio LSP', async (t) => {
+  const session = new LspServerSession(process.cwd());
+
+  t.after(async () => {
+    await session.close();
+  });
+
+  const workspaceDirectory = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'koppajs-language-server-integration-'),
+  );
+  const pagePath = path.join(workspaceDirectory, 'Page.kpa');
+  const pageUri = pathToFileURL(pagePath).href;
+  const pageText = [
+    '[template]',
+    '  <option loop="loopItem in options">{{ lo }}</option>',
+    '[/template]',
+    '',
+    '[ts]',
+    '  return {',
+    '    state: { options: [] },',
+    '  };',
+    '[/ts]',
+  ].join('\n');
+
+  fs.writeFileSync(pagePath, pageText);
+
+  await initializeWorkspace(session, pathToFileURL(workspaceDirectory).href, {
+    workspaceFolders: true,
+  });
+  session.notify('textDocument/didOpen', {
+    textDocument: {
+      uri: pageUri,
+      languageId: 'kpa',
+      version: 1,
+      text: pageText,
+    },
+  });
+
+  const completions = await session.request('textDocument/completion', {
+    textDocument: { uri: pageUri },
+    position: positionAt(pageText, pageText.indexOf('{{ lo') + 4),
+  });
+
+  assert(completions.some((item) => item.label === 'loopItem'));
+  assert(completions.some((item) => item.label === 'index'));
+});
+
+test('imported TypeScript bindings resolve and rename locally over stdio LSP', async (t) => {
+  const session = new LspServerSession(process.cwd());
+
+  t.after(async () => {
+    await session.close();
+  });
+
+  const workspaceDirectory = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'koppajs-language-server-integration-'),
+  );
+  const helperPath = path.join(workspaceDirectory, 'helpers.ts');
+  const pagePath = path.join(workspaceDirectory, 'Page.kpa');
+  const helperUri = pathToFileURL(helperPath).href;
+  const pageUri = pathToFileURL(pagePath).href;
+  const pageText = [
+    '[template]',
+    '  <div>{{ fmtName(user.name) }}</div>',
+    '[/template]',
+    '',
+    '[ts]',
+    "  import { formatName as fmtName } from './helpers';",
+    '  return {',
+    '    state: { user: { name: "Ada" } },',
+    '    methods: {',
+    '      renderName() {',
+    '        return fmtName(this.user.name);',
+    '      },',
+    '    },',
+    '  };',
+    '[/ts]',
+  ].join('\n');
+  const bindingOffset = pageText.indexOf('fmtName(user.name)') + 1;
+
+  fs.writeFileSync(
+    helperPath,
+    [
+      'export function formatName(value: string) {',
+      '  return value.trim();',
+      '}',
+    ].join('\n'),
+  );
+  fs.writeFileSync(pagePath, pageText);
+
+  await initializeWorkspace(session, pathToFileURL(workspaceDirectory).href, {
+    workspaceFolders: true,
+  });
+  session.notify('textDocument/didOpen', {
+    textDocument: {
+      uri: pageUri,
+      languageId: 'kpa',
+      version: 1,
+      text: pageText,
+    },
+  });
+
+  const definitions = await session.request('textDocument/definition', {
+    textDocument: { uri: pageUri },
+    position: positionAt(pageText, bindingOffset),
+  });
+  const references = await session.request('textDocument/references', {
+    textDocument: { uri: pageUri },
+    position: positionAt(pageText, bindingOffset),
+    context: {
+      includeDeclaration: true,
+    },
+  });
+  const prepareRename = await session.request('textDocument/prepareRename', {
+    textDocument: { uri: pageUri },
+    position: positionAt(pageText, bindingOffset),
+  });
+  const renameEdit = await session.request('textDocument/rename', {
+    textDocument: { uri: pageUri },
+    position: positionAt(pageText, bindingOffset),
+    newName: 'displayName',
+  });
+
+  assert(definitions.some((location) => location.uri === helperUri));
+  assert(references.some((location) => location.uri === pageUri));
+  assert.equal(prepareRename.placeholder, 'fmtName');
+  assert(
+    changesForUri(renameEdit, pageUri).some(
+      (edit) => edit.newText === 'displayName',
+    ),
+  );
+  assert.equal(changesForUri(renameEdit, helperUri).length, 0);
+});
