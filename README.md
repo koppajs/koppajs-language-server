@@ -103,6 +103,9 @@ The public surface is intentionally small:
 - the server supports completions, diagnostics, hover, definition, references,
   prepare rename, rename, quick fixes, document symbols, and workspace symbols
 - diagnostics are emitted as warnings with source `koppa-diagnostics`
+- required default-slot diagnostics include empty and whitespace-only paired
+  component tags; unrelated TypeScript errors do not reject valid prop values,
+  while genuine prop type mismatches remain diagnosed
 - incoming markup diagnostic messages are forwarded to language-core as their
   text value
 - only quick-fix code actions are advertised
@@ -150,7 +153,7 @@ await client.start();
 ## Local Development
 
 The repository consumes the published
-`@koppajs/koppajs-language-core@^0.2.0` package directly from npm.
+`@koppajs/koppajs-language-core@^0.2.1` package directly from npm.
 
 Requirements:
 

@@ -16,6 +16,17 @@ This section is intentionally empty.
 
 ---
 
+## 0.2.1
+
+- require language-core `^0.2.1` and validate the exact 0.2.1 minimum
+- forward missing required default-slot diagnostics for empty and whitespace-only
+  paired component tags
+- retain valid component prop assignments despite unrelated TypeScript
+  diagnostics, while still reporting genuine prop type mismatches
+- cover both core fixes through the real stdio LSP transport
+
+---
+
 ## 0.2.0
 
 - update dependencies and migrate to `vscode-languageserver` 11 using its

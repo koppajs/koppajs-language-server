@@ -13,9 +13,10 @@ test('package manifest publishes the scoped server package against the released 
   const packageManifest = readPackageManifest();
 
   assert.equal(packageManifest.name, '@koppajs/koppajs-language-server');
+  assert.equal(packageManifest.version, '0.2.1');
   assert.equal(
     packageManifest.dependencies['@koppajs/koppajs-language-core'],
-    '^0.2.0',
+    '^0.2.1',
   );
   assert.equal(
     packageManifest.dependencies['@koppajs/language-core'],
@@ -33,7 +34,7 @@ test('package manifest publishes the scoped server package against the released 
     ),
   );
 
-  assert.equal(coreManifest.version, '0.2.0');
+  assert.equal(coreManifest.version, '0.2.1');
   assert.equal(packageManifest.engines.node, coreManifest.engines.node);
   for (const name of [
     '@koppajs/koppajs-core',

@@ -915,3 +915,111 @@ test('imported TypeScript bindings resolve and rename locally over stdio LSP', a
   );
   assert.equal(changesForUri(renameEdit, helperUri).length, 0);
 });
+
+test('core 0.2.1 slot and prop diagnostics round-trip over stdio LSP', async (t) => {
+  const session = new LspServerSession(process.cwd());
+  const workspaceDirectory = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'koppajs-language-server-integration-'),
+  );
+  t.after(async () => {
+    await session.close();
+    fs.rmSync(workspaceDirectory, { recursive: true, force: true });
+  });
+  fs.writeFileSync(path.join(workspaceDirectory, 'tsconfig.json'), '{}\n');
+  fs.writeFileSync(
+    path.join(workspaceDirectory, 'Card.kpa'),
+    [
+      '[ts]',
+      'interface Slots { default: unknown; }',
+      'return { props: { title: { type: String, required: true } } };',
+      '[/ts]',
+    ].join('\n'),
+  );
+  await initializeWorkspace(session, pathToFileURL(workspaceDirectory).href);
+
+  const cases = [
+    { name: 'empty', body: '', value: "'Ada'", missing: true, invalid: false },
+    {
+      name: 'whitespace',
+      body: ' \n\t ',
+      value: "'Ada'",
+      missing: true,
+      invalid: false,
+    },
+    {
+      name: 'text',
+      body: 'Body',
+      value: "'Ada'",
+      missing: false,
+      invalid: false,
+    },
+    {
+      name: 'element',
+      body: '<div>Body</div>',
+      value: "'Ada'",
+      missing: false,
+      invalid: false,
+    },
+    {
+      name: 'mismatch',
+      body: 'Body',
+      value: '1',
+      missing: false,
+      invalid: true,
+    },
+    {
+      name: 'binding-mismatch',
+      body: 'Body',
+      value: 'title',
+      missing: false,
+      invalid: true,
+    },
+  ];
+  for (const { name, body, value, missing, invalid } of cases) {
+    const uri = pathToFileURL(
+      path.join(workspaceDirectory, `${name}.kpa`),
+    ).href;
+    const text = [
+      '[template]',
+      `  <Card :title="${value}" extra="sentinel">${body}</Card>`,
+      '[/template]',
+      '[ts]',
+      "import Card from './Card';",
+      'const unrelated: number = "wrong";',
+      'const title = 1;',
+      '[/ts]',
+    ].join('\n');
+    session.notify('textDocument/didOpen', {
+      textDocument: { uri, languageId: 'kpa', version: 1, text },
+    });
+    // The sentinel distinguishes computed diagnostics from didOpen's initial clear.
+    const notification = await session.waitForNotification(
+      'textDocument/publishDiagnostics',
+      (message) =>
+        message.params.uri === uri &&
+        message.params.diagnostics.some(
+          (diagnostic) => diagnostic.code === 'kpa.unknown-component-prop',
+        ),
+    );
+    const diagnostics = notification.params.diagnostics;
+    assert.equal(
+      diagnostics.filter(
+        (diagnostic) => diagnostic.code === 'kpa.missing-component-slot',
+      ).length,
+      missing ? 1 : 0,
+      name,
+    );
+    assert.equal(
+      diagnostics.filter(
+        (diagnostic) => diagnostic.code === 'kpa.invalid-component-prop-type',
+      ).length,
+      invalid ? 1 : 0,
+      name,
+    );
+    for (const diagnostic of diagnostics) {
+      assert.equal(diagnostic.severity, 2, name);
+      assert.equal(diagnostic.source, 'koppa-diagnostics', name);
+    }
+    session.notify('textDocument/didClose', { textDocument: { uri } });
+  }
+});
