@@ -70,7 +70,7 @@ The local pre-commit hook runs the same documentation guard and `npm run check:m
 
 ## Requirements
 
-- Node.js >= 22
+- Node.js ^22.13.0 || ^24.0.0 || >=26.0.0
 - npm >= 10
 
 Install dependencies:
@@ -100,6 +100,10 @@ Repository-specific focus for this project:
 - Keep this repository a thin adapter over `@koppajs/koppajs-language-core`.
 - Align capability declarations, mappings, tests, and docs in the same change.
 - Expect GitHub Actions validation on Node.js 22 and Node.js 24.
+- Use TypeScript 6.0.x with the current TypeScript-ESLint peer range; do not
+  upgrade to TypeScript 7 until that range supports it.
+- Keep the published ecosystem build/diagnostics test passing when updating
+  Core, Router, Vite plugin, language-core, or KPA Check.
 
 <p align="right">(<a href="#contributing-top">back to top</a>)</p>
 

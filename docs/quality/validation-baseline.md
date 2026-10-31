@@ -33,7 +33,7 @@
 - The tracked `.npmrc` enforces compatible Node.js and npm versions during
   install.
 - The tracked `.nvmrc` keeps the maintainer-default Node.js line on `22`.
-- The package declares support for Node.js `>=22`; CI validates on Node.js 22
+- The package declares support for Node.js `^22.13.0 || ^24.0.0 || >=26.0.0`; CI validates on Node.js 22
   and 24.
 
 ## Rationale

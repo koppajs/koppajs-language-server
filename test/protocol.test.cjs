@@ -145,6 +145,25 @@ test('diagnostics round-trip between KoppaJS and LSP shapes', () => {
   assert.deepEqual(fromDiagnostic(lspDiagnostic), diagnostic);
 });
 
+test('incoming markup diagnostic messages retain their text and metadata', () => {
+  const diagnostic = {
+    code: 'missing-prop',
+    data: { prop: 'title' },
+    message: { kind: MarkupKind.Markdown, value: '**Missing** title' },
+    range: {
+      start: { line: 1, character: 2 },
+      end: { line: 1, character: 8 },
+    },
+  };
+
+  assert.deepEqual(fromDiagnostic(diagnostic), {
+    code: diagnostic.code,
+    data: diagnostic.data,
+    message: '**Missing** title',
+    range: { line: 1, startChar: 2, endChar: 8 },
+  });
+});
+
 test('hover content is rendered as markdown with fenced code blocks', () => {
   const hover = toHover({
     contents: [

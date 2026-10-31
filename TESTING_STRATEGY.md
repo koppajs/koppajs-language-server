@@ -48,6 +48,8 @@ Use integration tests for:
   and symbol requests
 - workspace-registered component flows discovered through `Core.take(...)`
 - unresolved-component import quick fixes
+- a production Vite build using the published plugin, Core, and Router, plus
+  KPA Check / language-core diagnostic agreement on the same source fixture
 
 These tests must communicate with the built `dist/server.js` process over the
 actual LSP transport rather than importing `src/server.ts` directly.

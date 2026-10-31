@@ -10,10 +10,36 @@ The effective compatibility contract is the dependency range in
 
 For the current release line, the server declares:
 
-- `@koppajs/koppajs-language-core: ^0.1.4`
+- `@koppajs/koppajs-language-core: ^0.2.0`
 
 The server must not claim compatibility outside the range it actually declares
 and validates.
+
+## Ecosystem Validation Targets
+
+The maintained integration fixture uses the published packages:
+
+| Package                        | Minimum tested version |
+| ------------------------------ | ---------------------- |
+| `@koppajs/koppajs-core`        | `3.0.11`               |
+| `@koppajs/koppajs-router`      | `0.1.8`                |
+| `@koppajs/koppajs-vite-plugin` | `2.0.0`                |
+| `@koppajs/koppajs-kpa-check`   | `0.2.0`                |
+| `vite`                         | `8.3.5`                |
+
+These are development-only compatibility targets, not server runtime dependencies.
+The fixture verifies production compilation and diagnostic agreement, not browser
+mounting or router navigation. LSP behavior is separately covered by the stdio suite.
+Both the server and KPA Check use language-core `^0.2.0`.
+
+The Node.js engine policy is `^22.13.0 || ^24.0.0 || >=26.0.0`, matching
+language-core. TypeScript stays on `~6.0.3`, within the current TypeScript-ESLint
+peer range; Node type declarations stay on the supported Node 22 baseline.
+
+Source analysis follows explicit `Core.take(...)` registrations and canonical
+component return values. It does not execute Vite transforms or resolve aliases
+configured only in Vite or inherited tsconfig files. Route-table navigation is
+not part of the server contract.
 
 ## Current Policy
 
@@ -22,7 +48,7 @@ conservatively:
 
 - server releases must validate against the exact minimum core version declared
   in `package.json`
-- patch-level server releases may widen the core range within the same `0.1.x`
+- patch-level server releases may widen the core range within the same `0.2.x`
   line when the LSP contract does not change
 - a new core minor line requires an explicit server review, integration
   verification, and a server release that updates the dependency range

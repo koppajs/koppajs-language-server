@@ -103,6 +103,8 @@ The public surface is intentionally small:
 - the server supports completions, diagnostics, hover, definition, references,
   prepare rename, rename, quick fixes, document symbols, and workspace symbols
 - diagnostics are emitted as warnings with source `koppa-diagnostics`
+- incoming markup diagnostic messages are forwarded to language-core as their
+  text value
 - only quick-fix code actions are advertised
 - workspace roots are derived only from `file:` workspace URIs
 - when the client supports dynamic watched-file registration, the server
@@ -148,11 +150,11 @@ await client.start();
 ## Local Development
 
 The repository consumes the published
-`@koppajs/koppajs-language-core@^0.1.4` package directly from npm.
+`@koppajs/koppajs-language-core@^0.2.0` package directly from npm.
 
 Requirements:
 
-- Node.js >= 22
+- Node.js ^22.13.0 || ^24.0.0 || >=26.0.0
 - npm >= 10
 
 Maintainer default:
@@ -174,6 +176,12 @@ Common commands:
 - `npm test`
 - `npm run release:check`
 - `npm run validate`
+
+Compatibility is checked against Core 3.0.11, Router 0.1.8, Vite plugin 2.0.0,
+and KPA Check 0.2.0 through a production build and shared diagnostics fixture.
+These packages are development-only test dependencies; the server stays a thin
+adapter over language-core. Browser mounting and router navigation are not
+covered by this check.
 
 Compatibility policy:
 
