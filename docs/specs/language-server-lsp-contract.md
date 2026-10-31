@@ -97,6 +97,10 @@ LSP and what shape the client can rely on.
 - If the client does not support dynamic watched-file registration, the server
   still accepts incoming watched-file notifications but does not attempt to
   register them dynamically.
+- Core diagnostics include missing required default slots for empty or
+  whitespace-only paired component tags.
+- Unrelated TypeScript diagnostics do not cause valid component prop assignments
+  to be rejected; genuine prop type mismatches are still forwarded.
 - Diagnostic filtering for quick fixes matches by diagnostic code string.
 - Completions with replacement ranges emit `textEdit` instead of plain
   `insertText`.

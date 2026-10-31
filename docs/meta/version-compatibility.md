@@ -10,7 +10,7 @@ The effective compatibility contract is the dependency range in
 
 For the current release line, the server declares:
 
-- `@koppajs/koppajs-language-core: ^0.2.0`
+- `@koppajs/koppajs-language-core: ^0.2.1`
 
 The server must not claim compatibility outside the range it actually declares
 and validates.
@@ -30,7 +30,9 @@ The maintained integration fixture uses the published packages:
 These are development-only compatibility targets, not server runtime dependencies.
 The fixture verifies production compilation and diagnostic agreement, not browser
 mounting or router navigation. LSP behavior is separately covered by the stdio suite.
-Both the server and KPA Check use language-core `^0.2.0`.
+The server requires language-core `^0.2.1` and validates its exact minimum
+`0.2.1`. The KPA Check 0.2.0 compatibility target declares `^0.2.0`; the
+lockfile resolves its compatible core dependency to the same `0.2.1` release.
 
 The Node.js engine policy is `^22.13.0 || ^24.0.0 || >=26.0.0`, matching
 language-core. TypeScript stays on `~6.0.3`, within the current TypeScript-ESLint
