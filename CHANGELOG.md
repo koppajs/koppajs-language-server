@@ -16,6 +16,20 @@ This section is intentionally empty.
 
 ---
 
+## 0.2.0
+
+- update dependencies and migrate to `vscode-languageserver` 11 using its
+  exported Node entry point
+- align with language-core 0.2.0 and its Node.js engine policy, and refresh
+  ESLint 10 / TypeScript 6 tooling
+- verify the published Core 3.0.11, Router 0.1.8, Vite plugin 2.0.0, and
+  KPA Check 0.2.0 contracts with an ecosystem build/diagnostics test
+- override transitive minimatch to 11.0.3 to address its denial-of-service advisory
+- normalize incoming LSP markup diagnostic messages to their text value before
+  forwarding them to language-core
+
+---
+
 ## 0.1.2
 
 - raise the repository Node.js minimum to `>=22` and expand CI validation to

@@ -4,13 +4,13 @@ import {
   DidChangeWatchedFilesNotification,
   ProposedFeatures,
   TextDocuments,
-} from 'vscode-languageserver/node.js';
+} from 'vscode-languageserver/node';
 import type {
   Connection,
   DidChangeWatchedFilesParams,
   ReferenceParams,
   RenameParams,
-} from 'vscode-languageserver/node.js';
+} from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { KpaLanguageService } from '@koppajs/koppajs-language-core';
 import {

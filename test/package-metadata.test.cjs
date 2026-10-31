@@ -15,13 +15,39 @@ test('package manifest publishes the scoped server package against the released 
   assert.equal(packageManifest.name, '@koppajs/koppajs-language-server');
   assert.equal(
     packageManifest.dependencies['@koppajs/koppajs-language-core'],
-    '^0.1.4',
+    '^0.2.0',
   );
   assert.equal(
     packageManifest.dependencies['@koppajs/language-core'],
     undefined,
   );
-  assert.equal(packageManifest.engines.node, '>=22');
+  assert.equal(packageManifest.engines.node, '^22.13.0 || ^24.0.0 || >=26.0.0');
+  const coreManifest = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        path.dirname(require.resolve('@koppajs/koppajs-language-core')),
+        '..',
+        'package.json',
+      ),
+      'utf8',
+    ),
+  );
+
+  assert.equal(coreManifest.version, '0.2.0');
+  assert.equal(packageManifest.engines.node, coreManifest.engines.node);
+  for (const name of [
+    '@koppajs/koppajs-core',
+    '@koppajs/koppajs-router',
+    '@koppajs/koppajs-vite-plugin',
+    '@koppajs/koppajs-kpa-check',
+    'vite',
+  ]) {
+    assert(
+      packageManifest.devDependencies[name],
+      `${name} is a test dependency`,
+    );
+    assert.equal(packageManifest.dependencies[name], undefined);
+  }
   assert.equal(packageManifest.scripts.prepack, 'npm run validate');
   assert.equal(
     packageManifest.scripts['release:check'],

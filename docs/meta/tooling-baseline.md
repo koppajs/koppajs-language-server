@@ -4,8 +4,12 @@
 
 The repository currently uses:
 
-- TypeScript (`tsc`) for compilation and typechecking
-- ESLint for static analysis
+- TypeScript 6.0.x (`tsc`) for compilation and typechecking; TypeScript 7 is
+  excluded until TypeScript-ESLint supports it
+- Node.js `^22.13.0 || ^24.0.0 || >=26.0.0`, matching language-core
+- Node 22 type declarations to avoid using APIs missing from the minimum runtime
+- A minimatch 11.0.3 override for the transitive denial-of-service advisory
+- ESLint 10 and TypeScript-ESLint 8 for static analysis
 - Prettier for formatting
 - `node:test` for contract tests and stdio-LSP integration tests against the
   built runtime
@@ -38,9 +42,9 @@ The supported scripts are:
 
 The repository intentionally does not currently include:
 
-- a bundler
+- a production bundler (Vite is a development-only ecosystem test dependency)
 - Playwright or browser-E2E tooling
-- Husky or lint-staged hooks
+- lint-staged hooks (Husky runs the documented pre-commit guards)
 - coverage thresholds or coverage-report tooling
 - a full editor-host automation harness beyond the maintained stdio-LSP tests
 

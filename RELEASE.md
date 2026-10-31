@@ -55,7 +55,7 @@ Before cutting a release, ensure all of the following are true:
 
 Tooling expectations for local verification:
 
-- Node.js 22 or newer
+- Node.js ^22.13.0 || ^24.0.0 || >=26.0.0
 - npm 10 or newer
 - `.nvmrc` keeps the maintainer-default release line on Node.js 22
 - `.npmrc` enforces engine compatibility during local install

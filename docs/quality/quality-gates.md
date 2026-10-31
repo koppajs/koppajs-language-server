@@ -21,6 +21,8 @@ These gates describe what should be true before merging non-trivial changes.
 
 - `npm run validate` enforces documentation, meta-layer, formatting, linting,
   typechecking, build, and unit plus integration tests locally.
+- Integration tests include a real Vite production build and KPA Check /
+  language-core diagnostic agreement against the published ecosystem packages.
 - GitHub Actions runs `npm run validate` on Node.js 22 and Node.js 24 for pushes
   to `main` and `develop` and on pull requests.
 - GitHub Actions publishes tagged releases from Node.js 22 after validation and

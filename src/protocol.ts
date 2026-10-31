@@ -34,7 +34,7 @@ import {
   type SymbolInformation,
   type WorkspaceFoldersChangeEvent,
   type WorkspaceEdit,
-} from 'vscode-languageserver/node.js';
+} from 'vscode-languageserver/node';
 
 interface KpaDiagnostic {
   code?: number | string;
@@ -151,7 +151,10 @@ export function fromDiagnostic(diagnostic: Diagnostic): KpaDiagnostic {
         ? diagnostic.code
         : undefined,
     data: diagnostic.data,
-    message: diagnostic.message,
+    message:
+      typeof diagnostic.message === 'string'
+        ? diagnostic.message
+        : diagnostic.message.value,
     range: {
       endChar: diagnostic.range.end.character,
       line: diagnostic.range.start.line,

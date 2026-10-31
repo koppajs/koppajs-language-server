@@ -75,6 +75,9 @@ LSP and what shape the client can rely on.
     `RequestFailed` errors instead of surfacing as raw internal failures.
 11. Diagnostics are always emitted as warnings, and code actions are advertised
     only as quick fixes.
+12. Incoming diagnostic messages accept plain strings or LSP `MarkupContent`.
+    The adapter forwards the markup value as a string to language-core without
+    interpreting or rendering the markup.
 
 ## Constraints
 
